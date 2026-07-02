@@ -19,7 +19,6 @@ const confirmationList = document.querySelector("#confirmation-list");
 const serviceNames = {
   deepseek: ["DeepSeek", "Agent / Tool Calling"],
   baidu_vision: ["百度识图", "物体与场景识别"],
-  baidu_translate: ["百度翻译", "多语言菜谱输出"],
   spoonacular: ["Spoonacular", "菜谱路由 A"],
   themealdb: ["TheMealDB", "菜谱路由 B"],
 };

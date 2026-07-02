@@ -6,7 +6,6 @@ from dataclasses import dataclass
 
 from app.actions import InventoryActionService, PendingActionRepository
 from app.adapters.recipe_api import SpoonacularClient, TheMealDbClient
-from app.adapters.translation_api import TranslationApiClient
 from app.adapters.vision_api import VisionApiClient
 from app.agent import KitchenAgent, build_agent
 from app.audit import regex_audit
@@ -96,15 +95,6 @@ def build_pipeline(settings: Settings | None = None) -> KitchenPipeline:
         ttl_minutes=settings.pending_action_ttl_minutes,
     )
 
-    translator: TranslationApiClient | None = None
-    if settings.baidu_translate_app_id and settings.baidu_translate_secret_key:
-        translator = TranslationApiClient(
-            endpoint=settings.baidu_translate_endpoint,
-            app_id=settings.baidu_translate_app_id,
-            secret_key=settings.baidu_translate_secret_key,
-            timeout=settings.http_timeout_seconds,
-        )
-
     spoonacular: SpoonacularClient | None = None
     if settings.spoonacular_api_key:
         spoonacular = SpoonacularClient(
@@ -118,7 +108,7 @@ def build_pipeline(settings: Settings | None = None) -> KitchenPipeline:
         api_key=settings.themealdb_api_key,
         timeout=settings.http_timeout_seconds,
     )
-    recipes = RecipeRouter(spoonacular, themealdb, translator)
+    recipes = RecipeRouter(spoonacular, themealdb)
     agent = (
         build_agent(settings, inventory, recipes, actions)
         if settings.deepseek_api_key

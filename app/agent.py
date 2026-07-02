@@ -29,7 +29,7 @@ class KitchenAgent:
     recursion_limit: int = 10
 
     def run(self, context: AgentContext, target_language: str = "zh") -> AgentResult:
-        tools = self._create_tools(context, target_language)
+        tools = self._create_tools(context)
         agent = create_agent(
             model=self.model,
             tools=tools,
@@ -52,7 +52,7 @@ class KitchenAgent:
             )
         return AgentResult(content=content, tool_history=history)
 
-    def _create_tools(self, context: AgentContext, target_language: str) -> list[Any]:
+    def _create_tools(self, context: AgentContext) -> list[Any]:
         repository = self.inventory
         recipe_router = self.recipes
         action_service = self.actions
@@ -101,13 +101,14 @@ class KitchenAgent:
             ).model_dump(mode="json")
 
         @tool
-        def search_recipes(ingredients: list[str]) -> list[dict[str, object]]:
-            """Search Spoonacular and TheMealDB for safe recipes using the given ingredients."""
+        def search_recipes(
+            ingredients: list[str], allergen_terms: list[str]
+        ) -> list[dict[str, object]]:
+            """Search recipes. Pass English API query ingredients and English allergen terms derived from context."""
             return recipe_router.search(
                 ingredients=ingredients,
                 preferences=self._profile_values(context, "preferences"),
-                allergens=context.allergens,
-                target_language=target_language,
+                allergens=allergen_terms,
             )
 
         return [

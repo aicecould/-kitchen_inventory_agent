@@ -296,7 +296,6 @@ kitchen_inventory_agent/
 │  ├─ audit.py          # 简单正则审核占位
 │  ├─ adapters/
 │  │  ├─ vision_api.py       # 百度图像识别
-│  │  ├─ translation_api.py  # 百度翻译
 │  │  └─ recipe_api.py       # Spoonacular / TheMealDB
 │  └─ tools/
 │     ├─ inventory.py

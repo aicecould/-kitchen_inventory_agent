@@ -40,9 +40,6 @@ def service_status() -> dict[str, object]:
         "baidu_vision": bool(
             settings.baidu_image_api_key and settings.baidu_image_secret_key
         ),
-        "baidu_translate": bool(
-            settings.baidu_translate_app_id and settings.baidu_translate_secret_key
-        ),
         "spoonacular": bool(settings.spoonacular_api_key),
         "themealdb": bool(settings.themealdb_api_key),
     }

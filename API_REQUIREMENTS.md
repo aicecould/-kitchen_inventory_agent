@@ -105,59 +105,7 @@ BAIDU_IMAGE_ENDPOINT=https://aip.baidubce.com/rest/2.0/image-classify/v2/advance
 - API 客户端：`app/adapters/vision_api.py`
 - 图片校验与置信度处理：`app/vision.py`
 
-## 4. 百度通用翻译 API
-
-### 用途
-
-- 将中文食材名称翻译为英文，供国外菜谱 API 搜索。
-- 将英文菜谱标题、配料和烹饪步骤翻译为目标语言。
-
-### 官方资料
-
-- 百度翻译开放平台：https://api.fanyi.baidu.com/
-- 通用翻译产品：https://api.fanyi.baidu.com/product/11
-
-### 本地配置
-
-```dotenv
-BAIDU_TRANSLATE_APP_ID=
-BAIDU_TRANSLATE_SECRET_KEY=
-BAIDU_TRANSLATE_ENDPOINT=https://fanyi-api.baidu.com/api/trans/vip/translate
-```
-
-### 签名要求
-
-每次请求生成随机 `salt`，并按以下顺序拼接：
-
-```text
-appid + q + salt + secret_key
-```
-
-对拼接结果执行 MD5，得到 `sign`。计算签名前的 `q` 不进行 URL Encode。
-
-### 请求参数
-
-| 参数 | 说明 |
-|---|---|
-| `q` | 待翻译 UTF-8 文本 |
-| `from` | 源语言，默认 `auto` |
-| `to` | 目标语言，例如 `zh` 或 `en` |
-| `appid` | 百度翻译 APPID |
-| `salt` | 每次请求生成的随机数 |
-| `sign` | MD5 签名 |
-
-### 返回处理
-
-- 从 `trans_result[].dst` 读取译文。
-- 返回 `error_code` 时视为调用失败。
-- 过敏原在菜谱过滤前也需要翻译为英文，避免中文过敏原无法匹配英文配料。
-
-### 项目内位置
-
-- API 客户端：`app/adapters/translation_api.py`
-- 菜谱翻译和过敏原处理：`app/tools/recipe.py`
-
-## 5. Spoonacular API
+## 4. Spoonacular API
 
 ### 用途
 
@@ -185,7 +133,7 @@ GET /recipes/findByIngredients
 | 参数 | 说明 |
 |---|---|
 | `apiKey` | Spoonacular API Key |
-| `ingredients` | 英文食材名称，以逗号分隔 |
+| `ingredients` | Agent 按接口要求生成的食材查询词，以逗号分隔 |
 | `number` | 返回数量 |
 | `ranking=1` | 优先减少缺失食材 |
 | `ignorePantry=true` | 忽略常见基础调料 |
@@ -205,7 +153,7 @@ GET /recipes/{id}/information
 - API 客户端：`app/adapters/recipe_api.py`
 - 双路路由：`app/tools/recipe.py`
 
-## 6. TheMealDB API
+## 5. TheMealDB API
 
 ### 用途
 
@@ -230,7 +178,7 @@ THEMEALDB_BASE_URL=https://www.themealdb.com/api/json/v1
 GET /{api_key}/filter.php?i={main_ingredient}
 ```
 
-免费 V1 接口按一个主要食材过滤。项目使用翻译后的第一个食材作为查询条件。
+免费 V1 接口按一个主要食材过滤。项目使用 Agent 提供的第一个查询词作为条件。
 
 ### 详情请求
 
@@ -252,23 +200,22 @@ GET /{api_key}/lookup.php?i={meal_id}
 - API 客户端：`app/adapters/recipe_api.py`
 - 双路路由：`app/tools/recipe.py`
 
-## 7. 双路菜谱路由规则
+## 6. 双路菜谱路由规则
 
-1. 使用百度翻译将食材和过敏原转换为英文。
+1. Agent 按菜谱 API 的要求生成食材查询词和过敏原词，并作为工具参数传入。
 2. 优先并独立调用 Spoonacular 与 TheMealDB。
 3. 单一路由失败时保留另一路结果，不使整个工具立即失败。
 4. 按 `source + id` 去重。
-5. 在翻译输出前执行过敏原过滤。
-6. 使用百度翻译将最终菜谱转换为指定语言。
+5. 使用 Agent 提供的过敏原词过滤候选菜谱。
+6. 菜谱工具保留 API 原始结果，由 Agent 使用目标语言生成最终回答。
 7. 两路均失败且没有结果时，向 Agent 返回明确错误。
 
-## 8. 配置检查清单
+## 7. 配置检查清单
 
 运行完整链路前，在本地 `.env` 中确认：
 
 - [ ] 已填写 `DEEPSEEK_API_KEY`；
 - [ ] 已填写百度图像识别 API Key 与 Secret Key；
-- [ ] 已填写百度翻译 APPID 与 Secret Key；
 - [ ] 已填写 `SPOONACULAR_API_KEY`；
 - [ ] TheMealDB Key 符合当前使用场景；
 - [ ] 各服务已在对应控制台开通；

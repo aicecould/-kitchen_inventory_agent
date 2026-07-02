@@ -29,28 +29,13 @@ class FakeMealDb:
         ]
 
 
-class FakeTranslator:
-    translations = {
-        ("番茄", "en"): "tomato",
-        ("花生", "en"): "peanut",
-        ("Tomato salad", "zh"): "番茄沙拉",
-        ("Mix tomato and salt.", "zh"): "混合番茄和盐。",
-        ("tomato", "zh"): "番茄",
-        ("salt", "zh"): "盐",
-    }
-
-    def translate(self, text: str, target: str, source: str = "auto") -> str:
-        return self.translations.get((text, target), text)
-
-
-def test_dual_route_filters_translated_allergen_and_localizes() -> None:
-    router = RecipeRouter(FakeSpoonacular(), FakeMealDb(), FakeTranslator())  # type: ignore[arg-type]
+def test_dual_route_filters_agent_supplied_allergen_terms() -> None:
+    router = RecipeRouter(FakeSpoonacular(), FakeMealDb())  # type: ignore[arg-type]
     results = router.search(
-        ingredients=["番茄"],
+        ingredients=["tomato"],
         preferences=[],
-        allergens=["花生"],
-        target_language="zh",
+        allergens=["peanut"],
     )
     assert len(results) == 1
-    assert results[0]["title"] == "番茄沙拉"
+    assert results[0]["title"] == "Tomato salad"
     assert results[0]["source"] == "spoonacular"

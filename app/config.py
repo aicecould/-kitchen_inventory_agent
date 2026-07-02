@@ -19,9 +19,6 @@ class Settings:
     baidu_image_api_key: str
     baidu_image_secret_key: str
     baidu_image_endpoint: str
-    baidu_translate_app_id: str
-    baidu_translate_secret_key: str
-    baidu_translate_endpoint: str
     spoonacular_api_key: str
     spoonacular_base_url: str
     themealdb_api_key: str
@@ -49,12 +46,6 @@ def get_settings() -> Settings:
         baidu_image_endpoint=os.getenv(
             "BAIDU_IMAGE_ENDPOINT",
             "https://aip.baidubce.com/rest/2.0/image-classify/v2/advanced_general",
-        ),
-        baidu_translate_app_id=os.getenv("BAIDU_TRANSLATE_APP_ID", ""),
-        baidu_translate_secret_key=os.getenv("BAIDU_TRANSLATE_SECRET_KEY", ""),
-        baidu_translate_endpoint=os.getenv(
-            "BAIDU_TRANSLATE_ENDPOINT",
-            "https://fanyi-api.baidu.com/api/trans/vip/translate",
         ),
         spoonacular_api_key=os.getenv("SPOONACULAR_API_KEY", ""),
         spoonacular_base_url=os.getenv(

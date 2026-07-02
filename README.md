@@ -7,7 +7,7 @@
 ```text
 输入 → 简单意图匹配 → 百度图像识别 API → Markdown 用户画像
     → DeepSeek LangChain Agent → 库存工具 / 双路食谱工具
-    → 百度翻译 → 简单正则审核 → 输出
+    → 简单正则审核 → 输出
 ```
 
 当前不实现：前端、订单管理、向量意图识别、RAG、Web Search、工具调用审查和第二模型复审。
@@ -66,6 +66,5 @@ uvicorn app.web:app --reload
 
 - `DEEPSEEK_API_KEY`：Agent 模型；
 - `BAIDU_IMAGE_API_KEY` / `BAIDU_IMAGE_SECRET_KEY`：物体识别；
-- `BAIDU_TRANSLATE_APP_ID` / `BAIDU_TRANSLATE_SECRET_KEY`：多语言翻译；
 - `SPOONACULAR_API_KEY`：第一路菜谱搜索；
 - `THEMEALDB_API_KEY`：第二路菜谱搜索，开发阶段默认使用测试键 `1`。
