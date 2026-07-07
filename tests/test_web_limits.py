@@ -2,9 +2,11 @@ from fastapi.testclient import TestClient
 
 from app.limits import MAX_IMAGE_BYTES, MAX_TEXT_CHARS
 from dataclasses import replace
+from io import BytesIO
 
 from app.config import get_settings
 from app.web import app
+from PIL import Image
 
 
 client = TestClient(app)
@@ -39,6 +41,20 @@ def test_backend_rejects_oversized_image_before_pipeline() -> None:
 
     assert response.status_code == 413
     assert "3 MiB" in response.json()["detail"]
+
+
+def test_backend_rejects_unsupported_image_format_before_pipeline() -> None:
+    buffer = BytesIO()
+    Image.new("RGB", (64, 64), "green").save(buffer, format="WEBP")
+
+    response = client.post(
+        "/api/process",
+        data={"text": "识别图片", "language": "zh"},
+        files={"image": ("image.webp", buffer.getvalue(), "image/webp")},
+    )
+
+    assert response.status_code == 400
+    assert "JPG、PNG 或 BMP" in response.json()["detail"]
 
 
 def test_process_response_includes_backend_execution_trace() -> None:

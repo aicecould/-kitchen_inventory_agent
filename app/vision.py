@@ -16,17 +16,17 @@ DEFAULT_HIGH_THRESHOLD = 0.85
 
 def validate_image(image_bytes: bytes, max_bytes: int = MAX_IMAGE_BYTES) -> None:
     if not image_bytes:
-        raise ValueError("Image is empty")
+        raise ValueError("图片不能为空。")
     if len(image_bytes) > max_bytes:
-        raise ValueError("Image exceeds size limit")
+        raise ValueError("图片不能超过 3 MiB。")
     with Image.open(BytesIO(image_bytes)) as image:
         if image.format not in {"JPEG", "PNG", "BMP"}:
-            raise ValueError("Image format must be JPEG, PNG, or BMP")
+            raise ValueError("图片格式必须是 JPG、PNG 或 BMP。")
         width, height = image.size
         if min(width, height) < 15 or max(width, height) > 4096:
-            raise ValueError("Image dimensions must be between 15 and 4096 pixels")
+            raise ValueError("图片边长必须在 15–4096px 之间。")
         if max(width, height) / min(width, height) > 3:
-            raise ValueError("Image aspect ratio must not exceed 3:1")
+            raise ValueError("图片长宽比不能超过 3:1。")
         image.verify()
 
 

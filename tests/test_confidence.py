@@ -24,7 +24,7 @@ def test_ingredient_image_accepts_supported_format() -> None:
 
 
 def test_ingredient_image_rejects_webp_and_extreme_aspect_ratio() -> None:
-    with pytest.raises(ValueError, match="format"):
+    with pytest.raises(ValueError, match="格式"):
         validate_image(image_bytes("WEBP"))
-    with pytest.raises(ValueError, match="aspect ratio"):
+    with pytest.raises(ValueError, match="长宽比"):
         validate_image(image_bytes("PNG", (64, 16)))

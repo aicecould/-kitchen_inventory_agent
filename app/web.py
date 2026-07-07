@@ -18,7 +18,9 @@ from app.limits import MAX_IMAGE_BYTES, MAX_TEXT_CHARS
 from app.memory import read_user_profile, write_user_allergens
 from app.pipeline import KitchenPipeline, build_pipeline
 from app.actions import InventoryActionService, PendingActionRepository
+from app.adapters.vision_api import VisionApiError
 from app.tools.inventory import InventoryRepository
+from app.vision import validate_image
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 FRONTEND_DIR = ROOT_DIR / "frontend"
@@ -188,6 +190,10 @@ async def process_request(
                 status_code=413,
                 detail=f"图片不能超过 {MAX_IMAGE_BYTES // 1024 // 1024} MiB。",
             )
+        try:
+            validate_image(image_bytes)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
     validation_duration_ms = round((perf_counter() - validation_started) * 1000)
     try:
         result = get_pipeline().process_request(
@@ -196,6 +202,11 @@ async def process_request(
             image_bytes=image_bytes,
             target_language=language,
         )
+    except VisionApiError as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=f"百度果蔬识别失败（错误码 {exc.code}）：{exc.user_message}",
+        ) from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:

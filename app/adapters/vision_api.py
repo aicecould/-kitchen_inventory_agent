@@ -15,6 +15,24 @@ class Detection:
     confidence: float
 
 
+class VisionApiError(RuntimeError):
+    def __init__(self, code: str, provider_message: str = "") -> None:
+        super().__init__(code)
+        self.code = code
+        self.provider_message = provider_message
+
+    @property
+    def user_message(self) -> str:
+        known = {
+            "6": "当前应用没有果蔬识别接口权限。",
+            "17": "果蔬识别调用额度已用完。",
+            "18": "果蔬识别请求过于频繁。",
+            "216201": "百度无法解析这张图片。",
+            "216202": "图片尺寸不符合百度接口要求。",
+        }
+        return known.get(self.code, "百度果蔬识别服务拒绝了本次请求。")
+
+
 class VisionApiClient:
     TOKEN_ENDPOINT = "https://aip.baidubce.com/oauth/2.0/token"
 
@@ -49,7 +67,10 @@ class VisionApiClient:
         payload = response.json()
         token = payload.get("access_token")
         if not token:
-            raise RuntimeError(f"Baidu token request failed: {payload}")
+            raise VisionApiError(
+                str(payload.get("error", "TOKEN_FAILED")),
+                str(payload.get("error_description", "")),
+            )
         self._access_token = str(token)
         expires_in = int(payload.get("expires_in", 2_592_000))
         self._token_expires_at = monotonic() + max(60, expires_in - 60)
@@ -70,7 +91,10 @@ class VisionApiClient:
         response.raise_for_status()
         payload = response.json()
         if "error_code" in payload:
-            raise RuntimeError(f"Baidu image recognition failed: {payload}")
+            raise VisionApiError(
+                str(payload["error_code"]),
+                str(payload.get("error_msg", "")),
+            )
         return [
             Detection(name=str(item["name"]), confidence=float(item["score"]))
             for item in payload.get("result", [])

@@ -114,12 +114,15 @@
             </div>
 
             <div class="form-grid">
-              <label class="dropzone" id="dropzone" for="image-input">
-                <input id="image-input" type="file" name="image" accept="image/png,image/jpeg,image/bmp" />
-                <span class="drop-icon">＋</span>
-                <strong id="file-title">放一张食材照片</strong>
-                <small id="file-meta">PNG / JPG / BMP · 不超过 <span id="file-limit">3 MiB</span></small>
-              </label>
+              <div class="image-upload">
+                <label class="dropzone" id="dropzone" for="image-input">
+                  <input id="image-input" type="file" name="image" accept="image/png,image/jpeg,image/bmp" />
+                  <span class="drop-icon">＋</span>
+                  <strong id="file-title">放一张食材照片</strong>
+                  <small id="file-meta">JPG / PNG / BMP · ≤3 MiB · 15–4096px · ≤3:1</small>
+                </label>
+                <button class="clear-image-button" id="clear-image" type="button" hidden>清除图片</button>
+              </div>
 
               <div class="control-stack">
                 <input type="hidden" name="language" value="zh" />

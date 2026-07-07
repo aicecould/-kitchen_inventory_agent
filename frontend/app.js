@@ -5,6 +5,7 @@ const imageInput = document.querySelector("#image-input");
 const dropzone = document.querySelector("#dropzone");
 const fileTitle = document.querySelector("#file-title");
 const fileMeta = document.querySelector("#file-meta");
+const clearImageButton = document.querySelector("#clear-image");
 const submitButton = document.querySelector("#submit-button");
 const resultSection = document.querySelector("#result-section");
 const resultState = document.querySelector("#result-state");
@@ -115,32 +116,65 @@ allergenForm.addEventListener("submit", async (event) => {
   }
 });
 
-function updateFile(file) {
+function resetImageInput() {
+  imageInput.value = "";
+  imageInput.setCustomValidity("");
+  dropzone.classList.remove("has-file");
+  clearImageButton.hidden = true;
+  fileTitle.textContent = "放一张食材照片";
+  fileMeta.textContent = "JPG / PNG / BMP · ≤3 MiB · 15–4096px · ≤3:1";
+}
+
+function rejectImage(message) {
+  imageInput.value = "";
+  imageInput.setCustomValidity(message);
+  dropzone.classList.remove("has-file");
+  clearImageButton.hidden = true;
+  fileTitle.textContent = "图片不符合要求";
+  fileMeta.textContent = message;
+  imageInput.reportValidity();
+}
+
+async function updateFile(file) {
   if (!file) {
-    dropzone.classList.remove("has-file");
-    fileTitle.textContent = "放一张食材照片";
-    fileMeta.textContent = "PNG / JPG / BMP · 不超过 3 MiB";
-    return;
+    resetImageInput();
+    return true;
+  }
+  if (!new Set(["image/jpeg", "image/png", "image/bmp"]).has(file.type)) {
+    rejectImage("仅支持 JPG、PNG 或 BMP 图片。");
+    return false;
   }
   if (file.size > requestLimits.maxImageBytes) {
-    imageInput.value = "";
-    imageInput.setCustomValidity(
-      `图片不能超过 ${(requestLimits.maxImageBytes / 1024 / 1024).toFixed(0)} MiB。`,
-    );
-    dropzone.classList.remove("has-file");
-    fileTitle.textContent = "图片太大，请重新选择";
-    fileMeta.textContent = imageInput.validationMessage;
-    imageInput.reportValidity();
+    rejectImage(`图片不能超过 ${(requestLimits.maxImageBytes / 1024 / 1024).toFixed(0)} MiB。`);
+    return false;
+  }
+  let bitmap;
+  try {
+    bitmap = await createImageBitmap(file);
+  } catch {
+    rejectImage("图片无法解码，请重新选择。");
+    return false;
+  }
+  const { width, height } = bitmap;
+  bitmap.close();
+  if (Math.min(width, height) < 15 || Math.max(width, height) > 4096) {
+    rejectImage("图片边长必须在 15–4096px 之间。");
+    return false;
+  }
+  if (Math.max(width, height) / Math.min(width, height) > 3) {
+    rejectImage("图片长宽比不能超过 3:1。");
     return false;
   }
   imageInput.setCustomValidity("");
   dropzone.classList.add("has-file");
+  clearImageButton.hidden = false;
   fileTitle.textContent = file.name;
-  fileMeta.textContent = `${(file.size / 1024 / 1024).toFixed(2)} MiB · 点击可更换`;
+  fileMeta.textContent = `${width}×${height}px · ${(file.size / 1024 / 1024).toFixed(2)} MiB · 点击可更换`;
   return true;
 }
 
-imageInput.addEventListener("change", () => updateFile(imageInput.files[0]));
+imageInput.addEventListener("change", async () => updateFile(imageInput.files[0]));
+clearImageButton.addEventListener("click", resetImageInput);
 ["dragenter", "dragover"].forEach((eventName) => {
   dropzone.addEventListener(eventName, (event) => {
     event.preventDefault();
@@ -153,13 +187,13 @@ imageInput.addEventListener("change", () => updateFile(imageInput.files[0]));
     dropzone.classList.remove("dragging");
   });
 });
-dropzone.addEventListener("drop", (event) => {
+dropzone.addEventListener("drop", async (event) => {
   const file = event.dataTransfer.files[0];
   if (!file) return;
   const transfer = new DataTransfer();
   transfer.items.add(file);
   imageInput.files = transfer.files;
-  updateFile(file);
+  await updateFile(file);
 });
 
 async function loadStatus() {
@@ -171,10 +205,8 @@ async function loadStatus() {
       requestLimits.maxImageBytes = data.limits.max_image_bytes;
       promptInput.maxLength = requestLimits.maxTextChars;
       document.querySelector("#text-limit").textContent = requestLimits.maxTextChars;
-      document.querySelector("#file-limit").textContent =
-        `${(requestLimits.maxImageBytes / 1024 / 1024).toFixed(0)} MiB`;
       promptInput.dispatchEvent(new Event("input"));
-      if (imageInput.files[0]) updateFile(imageInput.files[0]);
+      if (imageInput.files[0]) await updateFile(imageInput.files[0]);
     }
     globalStatus.classList.toggle("ready", data.ready);
     globalStatus.querySelector("span:last-child").textContent = data.ready ? "Agent 已就绪" : "等待 API 配置";
@@ -256,12 +288,12 @@ confirmationList.addEventListener("click", async (event) => {
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   const file = imageInput.files[0];
+  const imageIsValid = !file || await updateFile(file);
   if (
     !promptInput.value.length
     || promptInput.value.length > requestLimits.maxTextChars
-    || (file && file.size > requestLimits.maxImageBytes)
+    || !imageIsValid
   ) {
-    if (file) updateFile(file);
     promptInput.dispatchEvent(new Event("input"));
     form.reportValidity();
     return;
@@ -281,7 +313,7 @@ form.addEventListener("submit", async (event) => {
     const data = await response.json();
     if (!response.ok) throw new Error(data.detail || "请求失败");
 
-    answerContent.textContent = data.content;
+    answerContent.innerHTML = renderSafeMarkdown(data.content);
     resultState.textContent = data.blocked ? "已拦截" : "完成";
     resultState.classList.toggle("blocked", data.blocked);
     renderExecutionTrace(data.execution_trace || []);
@@ -314,17 +346,110 @@ function shorten(value, limit) {
   return value.length > limit ? `${value.slice(0, limit)}…` : value;
 }
 
-function displayResult(value) {
-  if (typeof value === "string") return value;
-  try {
-    return JSON.stringify(value);
-  } catch {
-    return String(value);
-  }
+function renderInlineMarkdown(text) {
+  const codeSpans = [];
+  let rendered = text.replace(/`([^`\n]+)`/g, (_, code) => {
+    const index = codeSpans.push(code) - 1;
+    return `\uE000${index}\uE001`;
+  });
+  rendered = rendered
+    .replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/__([^_\n]+)__/g, "<strong>$1</strong>")
+    .replace(/\*([^*\n]+)\*/g, "<em>$1</em>");
+  return rendered.replace(/\uE000(\d+)\uE001/g, (_, index) => {
+    return `<code>${codeSpans[Number(index)]}</code>`;
+  });
+}
+
+function renderSafeMarkdown(markdown) {
+  const lines = escapeHtml(String(markdown || "")).replace(/\r\n?/g, "\n").split("\n");
+  const output = [];
+  let paragraph = [];
+  let listType = null;
+  let inCodeBlock = false;
+  let codeLines = [];
+
+  const closeParagraph = () => {
+    if (!paragraph.length) return;
+    output.push(`<p>${paragraph.map(renderInlineMarkdown).join("<br>")}</p>`);
+    paragraph = [];
+  };
+  const closeList = () => {
+    if (!listType) return;
+    output.push(`</${listType}>`);
+    listType = null;
+  };
+  const closeCodeBlock = () => {
+    output.push(`<pre><code>${codeLines.join("\n")}</code></pre>`);
+    codeLines = [];
+    inCodeBlock = false;
+  };
+
+  lines.forEach((line) => {
+    if (/^\s*```/.test(line)) {
+      if (inCodeBlock) {
+        closeCodeBlock();
+      } else {
+        closeParagraph();
+        closeList();
+        inCodeBlock = true;
+      }
+      return;
+    }
+    if (inCodeBlock) {
+      codeLines.push(line);
+      return;
+    }
+    if (!line.trim()) {
+      closeParagraph();
+      closeList();
+      return;
+    }
+    const heading = line.match(/^(#{1,3})\s+(.+)$/);
+    if (heading) {
+      closeParagraph();
+      closeList();
+      const level = heading[1].length;
+      output.push(`<h${level}>${renderInlineMarkdown(heading[2])}</h${level}>`);
+      return;
+    }
+    if (/^\s*(?:---|___|\*\*\*)\s*$/.test(line)) {
+      closeParagraph();
+      closeList();
+      output.push("<hr>");
+      return;
+    }
+    const unordered = line.match(/^\s*[-*]\s+(.+)$/);
+    const ordered = line.match(/^\s*\d+[.)]\s+(.+)$/);
+    if (unordered || ordered) {
+      closeParagraph();
+      const nextListType = unordered ? "ul" : "ol";
+      if (listType !== nextListType) {
+        closeList();
+        listType = nextListType;
+        output.push(`<${listType}>`);
+      }
+      output.push(`<li>${renderInlineMarkdown((unordered || ordered)[1])}</li>`);
+      return;
+    }
+    const quote = line.match(/^&gt;\s?(.+)$/);
+    if (quote) {
+      closeParagraph();
+      closeList();
+      output.push(`<blockquote>${renderInlineMarkdown(quote[1])}</blockquote>`);
+      return;
+    }
+    paragraph.push(line);
+  });
+
+  if (inCodeBlock) closeCodeBlock();
+  closeParagraph();
+  closeList();
+  return output.join("");
 }
 
 function escapeHtml(value) {
-  return value.replace(/[&<>'"]/g, (character) => ({
+  return String(value).replace(/[&<>'"]/g, (character) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;",
   })[character]);
 }

@@ -149,12 +149,15 @@ main { width: min(1240px, calc(100% - 48px)); margin: 0 auto; }
 .quick-prompts button:hover { color: var(--paper-light); background: var(--ink); transform: translateY(-2px); }
 
 .form-grid { display: grid; grid-template-columns: 1fr 210px; gap: 18px; }
+.image-upload { position: relative; min-width: 0; }
 .dropzone { min-height: 146px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px dashed var(--ink-soft); background: rgba(213,166,41,.05); cursor: pointer; transition: .2s; }
 .dropzone:hover, .dropzone.dragging { background: rgba(213,166,41,.15); border-color: var(--tomato); }
 .dropzone input { position: absolute; opacity: 0; pointer-events: none; }
 .drop-icon { width: 30px; height: 30px; display: grid; place-items: center; margin-bottom: 9px; border-radius: 50%; color: var(--paper-light); background: var(--tomato); font-size: 22px; line-height: 1; }
 .dropzone strong { font-size: 13px; }.dropzone small { margin-top: 5px; color: var(--ink-soft); font-size: 10px; }
 .dropzone.has-file { border-style: solid; background: rgba(78,141,100,.1); }
+.clear-image-button { position: absolute; z-index: 2; top: 10px; right: 10px; padding: 6px 9px; border: 1px solid var(--line); background: var(--paper-light); cursor: pointer; font-size: 10px; }
+.clear-image-button:hover { color: var(--paper-light); background: var(--tomato); border-color: var(--tomato); }
 
 .control-stack { display: grid; grid-template-rows: 1fr auto; gap: 12px; }
 .control-stack label { display: block; }
@@ -203,7 +206,20 @@ main { width: min(1240px, calc(100% - 48px)); margin: 0 auto; }
 .result-grid { display: grid; grid-template-columns: 1.25fr .75fr; gap: 20px; }
 .answer-card, .trace-card { min-height: 310px; padding: 30px; border: 1px solid var(--line); background: rgba(248,244,233,.75); }
 .answer-label { color: var(--tomato); margin-bottom: 24px; }
-.answer-content { white-space: pre-wrap; font: 500 19px/1.85 "Iowan Old Style", "Songti SC", serif; }
+.answer-content { font: 500 19px/1.85 "Iowan Old Style", "Songti SC", serif; }
+.answer-content > :first-child { margin-top: 0; }
+.answer-content > :last-child { margin-bottom: 0; }
+.answer-content p { margin: 0 0 1em; }
+.answer-content h1, .answer-content h2, .answer-content h3 { margin: 1.1em 0 .45em; color: var(--ink); line-height: 1.25; }
+.answer-content h1 { font-size: 1.55em; }.answer-content h2 { font-size: 1.3em; }.answer-content h3 { font-size: 1.08em; }
+.answer-content ul, .answer-content ol { margin: .4em 0 1em; padding-left: 1.45em; }
+.answer-content li { margin: .2em 0; }
+.answer-content strong { color: var(--tomato); font-weight: 800; }
+.answer-content code { padding: .12em .35em; background: rgba(24,55,46,.08); border: 1px solid var(--line); font: .78em/1.5 monospace; }
+.answer-content pre { overflow-x: auto; margin: .8em 0 1.1em; padding: 14px; color: var(--paper-light); background: var(--ink); white-space: pre-wrap; }
+.answer-content pre code { padding: 0; color: inherit; background: transparent; border: 0; }
+.answer-content blockquote { margin: .8em 0 1em; padding-left: 16px; border-left: 3px solid var(--mustard); color: var(--ink-soft); }
+.answer-content hr { margin: 1.2em 0; border: 0; border-top: 1px solid var(--line); }
 .tool-trace { display: grid; gap: 10px; }
 .trace-entry { padding: 13px; border-left: 3px solid var(--mustard); background: rgba(213,166,41,.08); }
 .trace-entry.trace-failed, .trace-entry.trace-blocked { border-left-color: var(--tomato); }
