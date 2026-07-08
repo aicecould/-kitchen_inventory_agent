@@ -308,8 +308,10 @@ kitchen_inventory_agent/
 │  └─ test_allergens.py
 ├─ main.py              # 命令行或 Python 调用入口
 ├─ frontend/            # 静态展示页面
+├─ scripts/             # PowerShell 启动与停止脚本
+├─ docs/                # 技术设计与 API 文档
 ├─ requirements.txt
-└─ TECHNICAL_DESIGN.md
+└─ README.md
 ```
 
 目录是建议结构，原型初期可以进一步合并文件，但工具业务函数与 Agent 编排应保持分离。

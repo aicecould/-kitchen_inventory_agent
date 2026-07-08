@@ -12,9 +12,9 @@
 
 当前不实现：前端、订单管理、向量意图识别、RAG、Web Search、工具调用审查和第二模型复审。
 
-详细设计见 [TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md)。
+详细设计见 [docs/TECHNICAL_DESIGN.md](docs/TECHNICAL_DESIGN.md)。
 
-外部服务的鉴权、端点与请求要求见 [API_REQUIREMENTS.md](API_REQUIREMENTS.md)。
+外部服务的鉴权、端点与请求要求见 [docs/API_REQUIREMENTS.md](docs/API_REQUIREMENTS.md)。
 
 ## 目录
 
@@ -23,8 +23,11 @@ app/             Python 主包
 app/adapters/    外部 API 适配器
 app/tools/       Agent 可调用工具
 data/            Markdown 用户画像及运行数据
+docs/            技术设计与外部 API 文档
+frontend/        静态展示页面
+scripts/         PowerShell 启动与停止脚本
 tests/           原型测试
-main.py          后端原型入口占位
+main.py          命令行入口
 ```
 
 ## 初始化
@@ -47,11 +50,17 @@ python main.py --text "推荐一道菜" --language zh
 启动展示页面：
 
 ```powershell
-uvicorn app.web:app --reload
+.\scripts\start.ps1
 ```
 
 然后访问 `http://127.0.0.1:8000`。页面支持文字输入、图片上传、库存查看、中文 Agent 回答与后端执行轨迹展示。
 页面还支持设置 Spoonacular 官方过敏原大类和自定义过敏食材；设置会写入 Markdown 用户画像，并注入后续 Agent 与食谱查询。
+
+停止应用：
+
+```powershell
+.\scripts\stop.ps1
+```
 
 展示库存确认流程时，可以输入：
 
